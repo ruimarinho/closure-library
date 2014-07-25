@@ -1,0 +1,30 @@
+{
+  "name": "seegno-closure-library",
+  "version": "20140725.0.2",
+  "description": "Fork of closure-library that allows installation via npm.",
+  "keywords": [
+    "javascript",
+    "library",
+    "google",
+    "closure"
+  ],
+  "author": {
+    "name": "Rui Marinho",
+    "email": "rui.marinho@seegno.com",
+    "url": "http://seegno.com"
+  },
+  "homepage": "https://github.com/seegno/closure-library",
+  "licenses": [
+    {
+      "type": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/seegno/closure-library.git"
+  },
+  "devDependencies": {
+    "glob": "3.1.14"
+  }
+}

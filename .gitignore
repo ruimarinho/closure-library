@@ -10,3 +10,6 @@
 
 # python
 *.pyc
+
+# custom
+node_modules

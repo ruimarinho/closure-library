@@ -1,0 +1,9 @@
+*.pyc
+*.css
+*.data
+*.gif
+*.html
+*.png
+*_test.js
+alltests.js
+known_issues
