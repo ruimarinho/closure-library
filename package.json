@@ -1,6 +1,6 @@
 {
   "name": "seegno-closure-library",
-  "version": "20140725.0.2",
+  "version": "20140725.0.5",
   "description": "Fork of closure-library that allows installation via npm.",
   "keywords": [
     "javascript",
@@ -24,7 +24,17 @@
     "type": "git",
     "url": "http://github.com/seegno/closure-library.git"
   },
-  "devDependencies": {
-    "glob": "3.1.14"
-  }
+  "contributors": [
+    "Google Inc.",
+    "Mohamed Mansour <hello@mohamedmansour.com>",
+    "Bjorn Tipling <bjorn.tipling@gmail.com>",
+    "SameGoal LLC <help@samegoal.com>",
+    "Guido Tapia <guido.tapia@gmail.com>",
+    "Andrew Mattie <amattie@gmail.com>",
+    "Ilia Mirkin <ibmirkin@gmail.com>",
+    "Ivan Kozik <ivan.kozik@gmail.com>",
+    "Rich Dougherty <rich@rd.gen.nz>",
+    "Chad Killingsworth <chadkillingsworth@missouristate.edu>",
+    "Dan Pupius <dan.pupius@gmail.com>"
+  ]
 }
