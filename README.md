@@ -2,6 +2,18 @@
 
 A mirror of the upstream [Google Closure Library](https://github.com/google/closure-library) but repackaged for npm and without global namespace pollution.
 
+## Status
+
+[![npm version][npm-image]][npm-url]
+
+## Installation
+
+Install the package via `npm`:
+
+```sh
+npm install --save seegno-closure-library
+```
+
 ## Usage
 
 ```js
@@ -40,6 +52,9 @@ git fetch upstream
 git merge --no-ff upstream/master
 ```
 
-# License
+# Licenses
 
 This package is licensed under MIT. The bundled Google Closure Library is licensed under Apache 2.0.
+
+[npm-image]: https://img.shields.io/npm/v/seegno-closure-library.svg?style=flat-square
+[npm-url]: https://npmjs.org/package/seegno-closure-library
