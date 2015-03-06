@@ -202,7 +202,6 @@ goog.ui.SubMenu.prototype.showSubMenu = function() {
   if (parent && parent.getHighlighted() == this) {
     this.setSubMenuVisible_(true);
     this.dismissSiblings_();
-    this.keyboardSetFocus_ = false;
   }
 };
 
@@ -575,7 +574,7 @@ goog.ui.SubMenu.prototype.getItemCount = function() {
 
 /**
  * Returns the menu items contained in the sub menu.
- * @return {!Array.<!goog.ui.MenuItem>} An array of menu items.
+ * @return {!Array<!goog.ui.MenuItem>} An array of menu items.
  * @deprecated Use getItemAt/getItemCount instead.
  */
 goog.ui.SubMenu.prototype.getItems = function() {

@@ -25,7 +25,6 @@ goog.require('goog.dom');
 goog.require('goog.dom.DomHelper');
 goog.require('goog.math.Box');
 goog.require('goog.math.Coordinate');
-goog.require('goog.math.Rect');
 goog.require('goog.math.Size');
 goog.require('goog.positioning');
 goog.require('goog.positioning.Corner');
@@ -40,8 +39,9 @@ goog.require('goog.userAgent.product');
 goog.setTestOnly('goog.positioningTest');
 
 // Allow positions to be off by one in gecko as it reports scrolling
-// offsets in steps of 2.
-var ALLOWED_OFFSET = goog.userAgent.GECKO ? 1 : 0;
+// offsets in steps of 2.  Otherwise, allow for subpixel difference
+// as seen in IE10+
+var ALLOWED_OFFSET = goog.userAgent.GECKO ? 1 : 0.1;
 // Error bar for positions since some browsers are not super accurate
 // in reporting them.
 var EPSILON = 2;
@@ -657,6 +657,17 @@ function testAdjustForViewportResizeHeight() {
              viewport.contains(new goog.math.Box(pos.y, pos.x + size.width,
                                                  pos.y + size.height, pos.x)));
 
+  var pos = newCoord(0, -50);
+  var size = newSize(50, 300);
+  assertEquals('Viewport height should be resized.',
+               goog.positioning.OverflowStatus.HEIGHT_ADJUSTED,
+               f(pos, size, viewport, overflow));
+  assertEquals('Height should be resized to 200.',
+               200, size.height);
+  assertTrue('Output box is within viewport',
+             viewport.contains(new goog.math.Box(pos.y, pos.x + size.width,
+                                                 pos.y + size.height, pos.x)));
+
   pos = newCoord(150, 150);
   size = newSize(50, 50);
   assertEquals('No Viewport overflow.',
@@ -682,6 +693,81 @@ function testAdjustForViewportResizeHeight() {
 }
 
 
+
+function testAdjustForViewportResizeWidth() {
+  var f = goog.positioning.adjustForViewport_;
+  var viewport = new goog.math.Box(0, 200, 200, 0);
+  var overflow = goog.positioning.Overflow.RESIZE_WIDTH;
+
+  var pos = newCoord(150, 150);
+  var size = newSize(100, 25);
+  assertEquals('Viewport width should be resized.',
+               goog.positioning.OverflowStatus.WIDTH_ADJUSTED,
+               f(pos, size, viewport, overflow));
+  assertEquals('Width should be resized to 50.',
+               50, size.width);
+  assertTrue('Output box is within viewport',
+             viewport.contains(new goog.math.Box(pos.y, pos.x + size.width,
+                                                 pos.y + size.height, pos.x)));
+
+  var pos = newCoord(0, 0);
+  var size = newSize(250, 50);
+  assertEquals('Viewport width should be resized.',
+               goog.positioning.OverflowStatus.WIDTH_ADJUSTED,
+               f(pos, size, viewport, overflow));
+  assertEquals('Width should be resized to 200.',
+               200, size.width);
+  assertTrue('Output box is within viewport',
+             viewport.contains(new goog.math.Box(pos.y, pos.x + size.width,
+                                                 pos.y + size.height, pos.x)));
+
+  var pos = newCoord(-50, 0);
+  var size = newSize(240, 50);
+  assertEquals('Viewport width should be resized.',
+               goog.positioning.OverflowStatus.WIDTH_ADJUSTED,
+               f(pos, size, viewport, overflow));
+  assertEquals('Width should be resized to 190.',
+               190, size.width);
+  assertTrue('Output box is within viewport',
+             viewport.contains(new goog.math.Box(pos.y, pos.x + size.width,
+                                                 pos.y + size.height, pos.x)));
+
+  var pos = newCoord(-50, 0);
+  var size = newSize(300, 50);
+  assertEquals('Viewport width should be resized.',
+               goog.positioning.OverflowStatus.WIDTH_ADJUSTED,
+               f(pos, size, viewport, overflow));
+  assertEquals('Width should be resized to 200.',
+               200, size.width);
+  assertTrue('Output box is within viewport',
+             viewport.contains(new goog.math.Box(pos.y, pos.x + size.width,
+                                                 pos.y + size.height, pos.x)));
+
+  pos = newCoord(150, 150);
+  size = newSize(50, 50);
+  assertEquals('No Viewport overflow.',
+               goog.positioning.OverflowStatus.NONE,
+               f(pos, size, viewport, overflow));
+  assertTrue('Output box is within viewport',
+             viewport.contains(new goog.math.Box(pos.y, pos.x + size.width,
+                                                 pos.y + size.height, pos.x)));
+
+  var offsetViewport = new goog.math.Box(0, 300, 200, 100);
+  var pos = newCoord(50, 0);
+  var size = newSize(240, 50);
+  assertEquals('Viewport width should be resized.',
+               goog.positioning.OverflowStatus.WIDTH_ADJUSTED,
+               f(pos, size, offsetViewport, overflow));
+  assertEquals('Width should be resized to 190.',
+               190, size.width);
+  assertTrue('Output box is within viewport',
+             offsetViewport.contains(new goog.math.Box(pos.y,
+                                                       pos.x + size.width,
+                                                       pos.y + size.height,
+                                                       pos.x)));
+}
+
+
 function testPositionAtAnchorWithResizeHeight() {
   var anchor = document.getElementById('anchor9');
   var popup = document.getElementById('popup9');
@@ -695,7 +781,15 @@ function testPositionAtAnchorWithResizeHeight() {
       viewport.toBox());
   assertEquals('Status should be HEIGHT_ADJUSTED.',
                goog.positioning.OverflowStatus.HEIGHT_ADJUSTED, status);
-  assertTrue('Popup is within viewport',
+
+  var TOLERANCE = 0.1;
+  // Adjust the viewport to allow some tolerance for subpixel positioning,
+  // this is required for this test to pass on IE10,11
+  viewport.top -= TOLERANCE;
+  viewport.left -= TOLERANCE;
+
+  assertTrue('Popup ' + goog.style.getBounds(popup) +
+             ' not is within viewport' + viewport,
              viewport.contains(goog.style.getBounds(popup)));
 }
 
@@ -717,6 +811,27 @@ function testPositionAtCoordinateResizeHeight() {
   var bounds = goog.style.getSize(popup);
   assertEquals('Height should be resized to the size of the viewport.',
                50, bounds.height);
+}
+
+
+function testGetPositionAtCoordinateResizeHeight() {
+  var f = goog.positioning.getPositionAtCoordinate;
+  var viewport = new goog.math.Box(0, 50, 50, 0);
+  var overflow = goog.positioning.Overflow.RESIZE_HEIGHT |
+      goog.positioning.Overflow.ADJUST_Y;
+  var popup = document.getElementById('popup1');
+  var corner = goog.positioning.Corner.BOTTOM_LEFT;
+
+  var pos = newCoord(100, 100);
+  var size = goog.style.getSize(popup);
+
+  var result = f(pos, size, corner, undefined, viewport, overflow);
+  assertEquals('Viewport height should be resized.',
+               goog.positioning.OverflowStatus.HEIGHT_ADJUSTED |
+               goog.positioning.OverflowStatus.ADJUSTED_Y,
+               result.status);
+  assertEquals('Height should be resized to the size of the viewport.',
+               50, result.rect.height);
 }
 
 

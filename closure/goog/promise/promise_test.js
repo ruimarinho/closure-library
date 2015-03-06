@@ -1341,6 +1341,20 @@ function testUnhandledBlockingRejection() {
 }
 
 
+function testUnhandledRejectionAfterThenAlways() {
+  mockClock.install();
+  var resolver = goog.Promise.withResolver();
+  resolver.promise.thenAlways(function() {});
+  resolver.reject(sentinel);
+
+  mockClock.tick();
+  assertEquals(1, unhandledRejections.getCallCount());
+  var rejectionCall = unhandledRejections.popLastCall();
+  assertArrayEquals([sentinel], rejectionCall.getArguments());
+  assertEquals(goog.global, rejectionCall.getThis());
+}
+
+
 function testHandledBlockingRejection() {
   mockClock.install();
   var blocker = goog.Promise.reject(sentinel);
@@ -1472,3 +1486,52 @@ function testCreateWithResolver_Rejected() {
 
   assertEquals('onFulfilled must be called exactly once.', 1, timesCalled);
 }
+
+
+function testLinksBetweenParentsAndChildrenAreCutOnResolve() {
+  mockClock.install();
+  var parentResolver = goog.Promise.withResolver();
+  var parent = parentResolver.promise;
+  var child = parent.then(function() {});
+  assertNotNull(child.parent_);
+  assertEquals(1, parent.callbackEntries_.length);
+  parentResolver.resolve();
+  mockClock.tick();
+  assertNull(child.parent_);
+  assertEquals(null, parent.callbackEntries_);
+}
+
+
+function testLinksBetweenParentsAndChildrenAreCutWithUnresolvedChild() {
+  mockClock.install();
+  var parentResolver = goog.Promise.withResolver();
+  var parent = parentResolver.promise;
+  var child = parent.then(function() {
+    // Will never resolve.
+    return new goog.Promise(function() {});
+  });
+  assertNotNull(child.parent_);
+  assertEquals(1, parent.callbackEntries_.length);
+  parentResolver.resolve();
+  mockClock.tick();
+  assertNull(child.parent_);
+  assertEquals(null, parent.callbackEntries_);
+}
+
+
+function testLinksBetweenParentsAndChildrenAreCutOnCancel() {
+  mockClock.install();
+  var parent = new goog.Promise(function() {});
+  var child = parent.then(function() {});
+  var grandChild = child.then(function() {});
+  assertEquals(1, child.callbackEntries_.length);
+  assertNotNull(child.parent_);
+  assertEquals(1, parent.callbackEntries_.length);
+  parent.cancel();
+  mockClock.tick();
+  assertNull(child.parent_);
+  assertNull(grandChild.parent_);
+  assertEquals(null, parent.callbackEntries_);
+  assertEquals(null, child.callbackEntries_);
+}
+

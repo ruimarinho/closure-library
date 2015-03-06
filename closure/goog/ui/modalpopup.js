@@ -14,6 +14,7 @@
 
 /**
  * @fileoverview Class for showing simple modal popup.
+ * @author chrishenry@google.com (Chris Henry)
  */
 
 goog.provide('goog.ui.ModalPopup');
@@ -168,7 +169,7 @@ goog.ui.ModalPopup.prototype.bgHideTransition_;
 
 /**
  * The elements set to aria-hidden when the popup was made visible.
- * @type {Array.<!Element>}
+ * @type {Array<!Element>}
  * @private
  */
 goog.ui.ModalPopup.prototype.hiddenElements_;
@@ -327,7 +328,8 @@ goog.ui.ModalPopup.prototype.decorateInternal = function(element) {
   this.manageBackgroundDom_();
   this.createTabCatcher_();
 
-  // Make sure the decorated modal popup is hidden.
+  // Make sure the decorated modal popup is focusable and hidden.
+  goog.dom.setFocusableTabIndex(this.getElement(), true);
   goog.style.setElementShown(this.getElement(), false);
 };
 
@@ -368,7 +370,6 @@ goog.ui.ModalPopup.prototype.exitDocument = function() {
 
 /**
  * Sets the visibility of the modal popup box and focus to the popup.
- * Lazily renders the component if needed.
  * @param {boolean} visible Whether the modal popup should be visible.
  */
 goog.ui.ModalPopup.prototype.setVisible = function(visible) {
@@ -475,7 +476,7 @@ goog.ui.ModalPopup.prototype.show_ = function() {
 
   if (this.popupShowTransition_ && this.bgShowTransition_) {
     goog.events.listenOnce(
-        /** @type {goog.events.EventTarget} */ (this.popupShowTransition_),
+        /** @type {!goog.events.EventTarget} */ (this.popupShowTransition_),
         goog.fx.Transition.EventType.END, this.onShow, false, this);
     this.bgShowTransition_.play();
     this.popupShowTransition_.play();
@@ -507,7 +508,7 @@ goog.ui.ModalPopup.prototype.hide_ = function() {
 
   if (this.popupHideTransition_ && this.bgHideTransition_) {
     goog.events.listenOnce(
-        /** @type {goog.events.EventTarget} */ (this.popupHideTransition_),
+        /** @type {!goog.events.EventTarget} */ (this.popupHideTransition_),
         goog.fx.Transition.EventType.END, this.onHide, false, this);
     this.bgHideTransition_.play();
     // The transition whose END event you are listening to must be played last
@@ -517,10 +518,32 @@ goog.ui.ModalPopup.prototype.hide_ = function() {
   } else {
     this.onHide();
   }
+
+  this.returnFocus_();
+};
+
+
+/**
+ * Attempts to return the focus back to the element that had it before the popup
+ * was opened.
+ * @private
+ */
+goog.ui.ModalPopup.prototype.returnFocus_ = function() {
   try {
-    var body = this.getDomHelper().getDocument().body;
-    var active = this.getDomHelper().getDocument().activeElement || body;
-    if (this.lastFocus_ && active == body && this.lastFocus_ != body) {
+    var dom = this.getDomHelper();
+    var body = dom.getDocument().body;
+    var active = dom.getDocument().activeElement || body;
+    if (!this.lastFocus_ || this.lastFocus_ == body) {
+      this.lastFocus_ = null;
+      return;
+    }
+    // We only want to move the focus if we actually have it, i.e.:
+    //  - if we immediately hid the popup the focus should have moved to the
+    // body element
+    //  - if there is a hiding transition in progress the focus would still be
+    // within the dialog and it is safe to move it if the current focused
+    // element is a child of the dialog
+    if (active == body || dom.contains(this.getElement(), active)) {
       this.lastFocus_.focus();
     }
   } catch (e) {
@@ -631,7 +654,7 @@ goog.ui.ModalPopup.prototype.resizeBackground_ = function() {
  * Centers the modal popup in the viewport, taking scrolling into account.
  */
 goog.ui.ModalPopup.prototype.reposition = function() {
-  // TODO(user): Make this use goog.positioning as in goog.ui.PopupBase?
+  // TODO(chrishenry): Make this use goog.positioning as in goog.ui.PopupBase?
 
   // Get the current viewport to obtain the scroll offset.
   var doc = this.getDomHelper().getDocument();

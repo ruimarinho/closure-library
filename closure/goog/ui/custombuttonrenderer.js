@@ -65,7 +65,7 @@ goog.ui.CustomButtonRenderer.CSS_CLASS = goog.getCssName('goog-custom-button');
  *    </div>
  * Overrides {@link goog.ui.ButtonRenderer#createDom}.
  * @param {goog.ui.Control} control goog.ui.Button to render.
- * @return {Element} Root element for the button.
+ * @return {!Element} Root element for the button.
  * @override
  */
 goog.ui.CustomButtonRenderer.prototype.createDom = function(control) {
@@ -78,7 +78,6 @@ goog.ui.CustomButtonRenderer.prototype.createDom = function(control) {
       this.createButton(button.getContent(), button.getDomHelper()));
   this.setTooltip(
       buttonElement, /** @type {!string}*/ (button.getTooltip()));
-  this.setAriaStates(button, buttonElement);
 
   return buttonElement;
 };
@@ -104,7 +103,8 @@ goog.ui.CustomButtonRenderer.prototype.getAriaRole = function() {
  * @override
  */
 goog.ui.CustomButtonRenderer.prototype.getContentElement = function(element) {
-  return element && /** @type {Element} */ (element.firstChild.firstChild);
+  return element && element.firstChild &&
+      /** @type {Element} */ (element.firstChild.firstChild);
 };
 
 

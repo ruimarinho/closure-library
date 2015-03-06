@@ -16,7 +16,6 @@
  * @fileoverview Functions and objects for date representation and manipulation.
  *
  * @author eae@google.com (Emil A Eklund)
- * @author pallosp@google.com (Peter Pallos)
  */
 
 goog.provide('goog.date');
@@ -134,6 +133,13 @@ goog.date.splitDurationRegex_ = new RegExp(
 
 
 /**
+ * Number of milliseconds in a day.
+ * @type {number}
+ */
+goog.date.MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+
+/**
  * Returns whether the given year is a leap year.
  *
  * @param {number} year Year part of date.
@@ -242,9 +248,6 @@ goog.date.getWeekNumber = function(year, month, date, opt_weekDay,
   // Default to Monday for first day of the week as per ISO 8601.
   var firstday = opt_firstDayOfWeek || goog.date.weekDay.MON;
 
-  // 1 day in milliseconds.
-  var ONE_DAY = 24 * 60 * 60 * 1000;
-
   // The d.getDay() has to be converted first to ISO weekday (Monday=0).
   var isoday = (d.getDay() + 6) % 7;
 
@@ -257,20 +260,22 @@ goog.date.getWeekNumber = function(year, month, date, opt_weekDay,
   // Unix timestamp of the midnight of the cutoff day in the week of 'd'.
   // There might be +-1 hour shift in the result due to the daylight saving,
   // but it doesn't affect the year.
-  var cutoffSameWeek = d.valueOf() + (cutoffpos - daypos) * ONE_DAY;
+  var cutoffSameWeek = d.valueOf() +
+      (cutoffpos - daypos) * goog.date.MS_PER_DAY;
 
   // Unix timestamp of January 1 in the year of 'cutoffSameWeek'.
   var jan1 = new Date(new Date(cutoffSameWeek).getFullYear(), 0, 1).valueOf();
 
   // Number of week. The round() eliminates the effect of daylight saving.
-  return Math.floor(Math.round((cutoffSameWeek - jan1) / ONE_DAY) / 7) + 1;
+  return Math.floor(Math.round(
+      (cutoffSameWeek - jan1) / goog.date.MS_PER_DAY) / 7) + 1;
 };
 
 
 /**
- * @param {!T} date1 A datelike object.
- * @param {!S} date2 Another datelike object.
- * @return {!(T|S)} The earlier of them in time.
+ * @param {T} date1 A datelike object.
+ * @param {S} date2 Another datelike object.
+ * @return {T|S} The earlier of them in time.
  * @template T,S
  */
 goog.date.min = function(date1, date2) {
@@ -279,9 +284,9 @@ goog.date.min = function(date1, date2) {
 
 
 /**
- * @param {!T} date1 A datelike object.
- * @param {!S} date2 Another datelike object.
- * @return {!(T|S)} The later of them in time.
+ * @param {T} date1 A datelike object.
+ * @param {S} date2 Another datelike object.
+ * @return {T|S} The later of them in time.
  * @template T,S
  */
 goog.date.max = function(date1, date2) {
@@ -737,9 +742,9 @@ goog.date.Interval.prototype.add = function(interval) {
  * expecting Date objects this class is marked as extending the built in Date
  * object even though that's not strictly true.
  *
- * @param {number|Object=} opt_year Four digit year or a date-like object. If
- *     not set, the created object will contain the date determined by
- *     goog.now().
+ * @param {number|goog.date.DateLike=} opt_year Four digit year or a date-like
+ *     object. If not set, the created object will contain the date
+ *     determined by goog.now().
  * @param {number=} opt_month Month, 0 = Jan, 11 = Dec.
  * @param {number=} opt_date Date of month, 1 - 31.
  * @constructor
@@ -1318,7 +1323,7 @@ goog.date.Date.compare = function(date1, date2) {
  *     goog.now().
  * @param {number=} opt_month Month, 0 = Jan, 11 = Dec.
  * @param {number=} opt_date Date of month, 1 - 31.
- * @param {number=} opt_hours Hours, 0 - 24.
+ * @param {number=} opt_hours Hours, 0 - 23.
  * @param {number=} opt_minutes Minutes, 0 - 59.
  * @param {number=} opt_seconds Seconds, 0 - 61.
  * @param {number=} opt_milliseconds Milliseconds, 0 - 999.

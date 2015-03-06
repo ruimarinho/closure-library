@@ -16,7 +16,6 @@
 /**
  * @fileoverview CanvasGraphics sub class that uses the canvas tag for drawing.
  * @author robbyw@google.com (Robby Walker)
- * @author wcrosby@google.com (Wayne Crosby)
  */
 
 
@@ -92,7 +91,10 @@ goog.graphics.CanvasGraphics.prototype.setElementStroke = function(
 
 
 /**
- * Set the transformation of an element.
+ * Set the translation and rotation of an element.
+ *
+ * If a more general affine transform is needed than this provides
+ * (e.g. skew and scale) then use setElementAffineTransform.
  * @param {goog.graphics.Element} element The element wrapper.
  * @param {number} x The x coordinate of the translation transform.
  * @param {number} y The y coordinate of the translation transform.
@@ -103,6 +105,22 @@ goog.graphics.CanvasGraphics.prototype.setElementStroke = function(
  */
 goog.graphics.CanvasGraphics.prototype.setElementTransform = function(element,
     x, y, angle, centerX, centerY) {
+  this.redraw();
+};
+
+
+/**
+ * Set the transformation of an element.
+ *
+ * Note that in this implementation this method just calls this.redraw()
+ * and the affineTransform param is unused.
+ * @param {!goog.graphics.Element} element The element wrapper.
+ * @param {!goog.graphics.AffineTransform} affineTransform The
+ *     transformation applied to this element.
+ * @override
+ */
+goog.graphics.CanvasGraphics.prototype.setElementAffineTransform =
+    function(element, affineTransform) {
   this.redraw();
 };
 
@@ -401,19 +419,6 @@ goog.graphics.CanvasGraphics.prototype.drawElement = function(element) {
   this.popElementTransform();
 };
 
-
-/**
- * Append an element.
- *
- * @param {goog.graphics.Element} element The element to draw.
- * @param {goog.graphics.CanvasGroupElement|undefined} group The group to draw
- *     it in. If null or undefined, defaults to the root group.
- * @private
- * @deprecated Use append instead.
- */
-goog.graphics.CanvasGraphics.prototype.append_ = function(element, group) {
-  this.append(element, group);
-};
 
 
 /**

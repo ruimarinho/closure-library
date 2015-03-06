@@ -16,7 +16,6 @@
 /**
  * @fileoverview SvgGraphics sub class that uses SVG to draw the graphics.
  * @author arv@google.com (Erik Arvidsson)
- * @author yoah@google.com (Yoah Bar-David)
  */
 
 goog.provide('goog.graphics.SvgGraphics');
@@ -91,7 +90,7 @@ goog.graphics.SvgGraphics = function(width, height,
 
   /**
    * Event handler.
-   * @type {goog.events.EventHandler.<!goog.graphics.SvgGraphics>}
+   * @type {goog.events.EventHandler<!goog.graphics.SvgGraphics>}
    * @private
    */
   this.handler_ = new goog.events.EventHandler(this);
@@ -261,6 +260,7 @@ goog.graphics.SvgGraphics.prototype.setElementStroke = function(element,
   var svgElement = element.getElement();
   if (stroke) {
     svgElement.setAttribute('stroke', stroke.getColor());
+    svgElement.setAttribute('stroke-opacity', stroke.getOpacity());
 
     var width = stroke.getWidth();
     if (goog.isString(width) && width.indexOf('px') != -1) {
@@ -276,7 +276,10 @@ goog.graphics.SvgGraphics.prototype.setElementStroke = function(element,
 
 
 /**
- * Set the transformation of an element.
+ * Set the translation and rotation of an element.
+ *
+ * If a more general affine transform is needed than this provides
+ * (e.g. skew and scale) then use setElementAffineTransform.
  * @param {goog.graphics.Element} element The element wrapper.
  * @param {number} x The x coordinate of the translation transform.
  * @param {number} y The y coordinate of the translation transform.
@@ -289,6 +292,22 @@ goog.graphics.SvgGraphics.prototype.setElementTransform = function(element, x,
     y, angle, centerX, centerY) {
   element.getElement().setAttribute('transform', 'translate(' + x + ',' + y +
       ') rotate(' + angle + ' ' + centerX + ' ' + centerY + ')');
+};
+
+
+/**
+ * Set the transformation of an element.
+ * @param {goog.graphics.Element} element The element wrapper.
+ * @param {!goog.graphics.AffineTransform} affineTransform The
+ *     transformation applied to this element.
+ * @override
+ */
+goog.graphics.SvgGraphics.prototype.setElementAffineTransform = function(
+    element, affineTransform) {
+  var t = affineTransform;
+  var substr = [t.getScaleX(), t.getShearY(), t.getShearX(), t.getScaleY(),
+                t.getTranslateX(), t.getTranslateY()].join(',');
+  element.getElement().setAttribute('transform', 'matrix(' + substr + ')');
 };
 
 
@@ -676,7 +695,6 @@ goog.graphics.SvgGraphics.getSvgPath = function(path) {
         break;
       case goog.graphics.Path.Segment.ARCTO:
         var extent = args[3];
-        var toAngle = args[2] + extent;
         list.push('A', args[0], args[1],
             0, Math.abs(extent) > 180 ? 1 : 0, extent > 0 ? 1 : 0,
             args[4], args[5]);
@@ -825,6 +843,8 @@ goog.graphics.SvgGraphics.prototype.disposeInternal = function() {
   delete this.defs_;
   delete this.defsElement_;
   delete this.canvasElement;
+  this.handler_.dispose();
+  delete this.handler_;
   goog.graphics.SvgGraphics.superClass_.disposeInternal.call(this);
 };
 

@@ -68,9 +68,11 @@ goog.provide('goog.net.CrossDomainRpc');
 
 goog.require('goog.Uri');
 goog.require('goog.dom');
+goog.require('goog.dom.safe');
 goog.require('goog.events');
 goog.require('goog.events.EventTarget');
 goog.require('goog.events.EventType');
+goog.require('goog.html.legacyconversions');
 goog.require('goog.json');
 goog.require('goog.log');
 goog.require('goog.net.EventType');
@@ -81,7 +83,13 @@ goog.require('goog.userAgent');
 
 
 /**
- * Creates a new instance of cross domain RPC
+ * Creates a new instance of cross domain RPC.
+ *
+ * This class makes use of goog.html.legacyconversions and provides no
+ * HTML-type-safe alternative. As such, it is not compatible with
+ * code that sets goog.html.legacyconversions.ALLOW_LEGACY_CONVERSIONS to
+ * false.
+ *
  * @extends {goog.events.EventTarget}
  * @constructor
  * @final
@@ -106,6 +114,38 @@ goog.net.CrossDomainRpc.RESPONSE_MARKER_ = 'xdrp';
  * @private
  */
 goog.net.CrossDomainRpc.useFallBackDummyResource_ = true;
+
+
+/** @type {Object} */
+goog.net.CrossDomainRpc.prototype.responseHeaders;
+
+
+/** @type {string} */
+goog.net.CrossDomainRpc.prototype.responseText;
+
+
+/** @type {number} */
+goog.net.CrossDomainRpc.prototype.status;
+
+
+/** @type {number} */
+goog.net.CrossDomainRpc.prototype.timeWaitedAfterResponseReady_;
+
+
+/** @private {boolean} */
+goog.net.CrossDomainRpc.prototype.responseTextIsJson_;
+
+
+/** @private {boolean} */
+goog.net.CrossDomainRpc.prototype.responseReady_;
+
+
+/** @private {!HTMLIFrameElement} */
+goog.net.CrossDomainRpc.prototype.requestFrame_;
+
+
+/** @private {goog.events.Key} */
+goog.net.CrossDomainRpc.prototype.loadListenerKey_;
 
 
 /**
@@ -375,7 +415,8 @@ goog.net.CrossDomainRpc.REQUEST_MARKER_ = 'xdrq';
 goog.net.CrossDomainRpc.prototype.sendRequest =
     function(uri, opt_method, opt_params, opt_headers) {
   // create request frame
-  var requestFrame = this.requestFrame_ = document.createElement('iframe');
+  var requestFrame = this.requestFrame_ = /** @type {!HTMLIFrameElement} */ (
+      document.createElement('iframe'));
   var requestId = goog.net.CrossDomainRpc.nextRequestId_++;
   requestFrame.id = goog.net.CrossDomainRpc.REQUEST_MARKER_ + '-' + requestId;
   if (!goog.net.CrossDomainRpc.debugMode_) {
@@ -420,9 +461,11 @@ goog.net.CrossDomainRpc.prototype.sendRequest =
   var requestFrameContent = '<body><form method="' +
       (opt_method == 'GET' ? 'GET' : 'POST') + '" action="' +
       uri + '">' + inputs.join('') + '</form></body>';
+  var requestFrameContentHtml = goog.html.legacyconversions.safeHtmlFromString(
+      requestFrameContent);
   var requestFrameDoc = goog.dom.getFrameContentDocument(requestFrame);
   requestFrameDoc.open();
-  requestFrameDoc.write(requestFrameContent);
+  goog.dom.safe.documentWrite(requestFrameDoc, requestFrameContentHtml);
   requestFrameDoc.close();
 
   requestFrameDoc.forms[0].submit();

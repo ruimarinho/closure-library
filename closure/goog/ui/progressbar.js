@@ -44,6 +44,9 @@ goog.require('goog.userAgent');
 goog.ui.ProgressBar = function(opt_domHelper) {
   goog.ui.Component.call(this, opt_domHelper);
 
+  /** @type {?HTMLDivElement} */
+  this.thumbElement_;
+
   /**
    * The underlying data model for the progress bar.
    * @type {goog.ui.RangeModel}
@@ -126,7 +129,7 @@ goog.ui.ProgressBar.prototype.exitDocument = function() {
  * @return {HTMLDivElement} The created thumb element.
  */
 goog.ui.ProgressBar.prototype.createThumb_ = function() {
-  return /** @type {HTMLDivElement} */ (this.getDomHelper().createDom('div',
+  return /** @type {!HTMLDivElement} */ (this.getDomHelper().createDom('div',
       goog.getCssName('progress-bar-thumb')));
 };
 

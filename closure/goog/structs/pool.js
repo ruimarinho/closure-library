@@ -31,7 +31,7 @@ goog.require('goog.structs.Set');
 
 /**
  * A generic pool class. If min is greater than max, an error is thrown.
- * @param {number=} opt_minCount Min. number of objects (Default: 1).
+ * @param {number=} opt_minCount Min. number of objects (Default: 0).
  * @param {number=} opt_maxCount Max. number of objects (Default: 10).
  * @constructor
  * @extends {goog.Disposable}
@@ -60,13 +60,13 @@ goog.structs.Pool = function(opt_minCount, opt_maxCount) {
   /**
    * Set used to store objects that are currently in the pool and available
    * to be used.
-   * @private {goog.structs.Queue.<T>}
+   * @private {goog.structs.Queue<T>}
    */
   this.freeQueue_ = new goog.structs.Queue();
 
   /**
    * Set used to store objects that are currently in the pool and in use.
-   * @private {goog.structs.Set.<T>}
+   * @private {goog.structs.Set<T>}
    */
   this.inUseSet_ = new goog.structs.Set();
 

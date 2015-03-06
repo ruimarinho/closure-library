@@ -283,7 +283,7 @@ goog.ui.Prompt.prototype.createDom = function() {
     'value': this.defaultValue_};
   if (this.rows_ == 1) {
     // If rows == 1 then use an input element.
-    this.userInputEl_ = /** @type {HTMLInputElement} */
+    this.userInputEl_ = /** @type {!HTMLInputElement} */
         (this.getDomHelper().createDom('input', attrs));
     this.userInputEl_.type = 'text';
     if (this.cols_) {
@@ -291,7 +291,7 @@ goog.ui.Prompt.prototype.createDom = function() {
     }
   } else {
     // If rows > 1 then use a textarea.
-    this.userInputEl_ = /** @type {HTMLInputElement} */
+    this.userInputEl_ = /** @type {!HTMLInputElement} */
         (this.getDomHelper().createDom('textarea', attrs));
     this.userInputEl_.rows = this.rows_;
     if (this.cols_) {
@@ -405,6 +405,5 @@ goog.ui.Prompt.prototype.disposeInternal = function() {
 
   goog.ui.Prompt.superClass_.disposeInternal.call(this);
 
-  this.defaulValue_ = null;
   this.userInputEl_ = null;
 };

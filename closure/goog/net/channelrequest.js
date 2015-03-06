@@ -103,7 +103,7 @@ goog.net.ChannelRequest = function(channel, channelDebug, opt_sessionId,
 
   /**
    * An object to keep track of the channel request event listeners.
-   * @type {!goog.events.EventHandler.<!goog.net.ChannelRequest>}
+   * @type {!goog.events.EventHandler<!goog.net.ChannelRequest>}
    * @private
    */
   this.eventHandler_ = new goog.events.EventHandler(this);
@@ -837,32 +837,6 @@ goog.net.ChannelRequest.prototype.startPolling_ = function() {
   this.pollingTimer_.start();
 };
 
-
-/**
- * Called when the browser declares itself offline at the start of a request or
- * during its lifetime.  Abandons that request.
- * @private
- */
-goog.net.ChannelRequest.prototype.cancelRequestAsBrowserIsOffline_ =
-    function() {
-  if (this.successful_) {
-    // Should never happen.
-    this.channelDebug_.severe(
-        'Received browser offline event even though request completed ' +
-        'successfully');
-  }
-
-  this.channelDebug_.browserOfflineResponse(this.requestUri_);
-  this.cleanup_();
-
-  // set error and dispatch failure
-  this.lastError_ = goog.net.ChannelRequest.Error.BROWSER_OFFLINE;
-  /** @suppress {missingRequire} */
-  goog.net.BrowserChannel.notifyStatEvent(
-      /** @suppress {missingRequire} */
-      goog.net.BrowserChannel.Stat.BROWSER_OFFLINE);
-  this.dispatchFailure_();
-};
 
 
 /**

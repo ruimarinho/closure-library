@@ -77,6 +77,9 @@ goog.ui.Control = function(opt_content, opt_renderer, opt_domHelper) {
   this.renderer_ = opt_renderer ||
       goog.ui.registry.getDefaultRenderer(this.constructor);
   this.setContentInternal(goog.isDef(opt_content) ? opt_content : null);
+
+  /** @private {?string} The control's aria-label. */
+  this.ariaLabel_ = null;
 };
 goog.inherits(goog.ui.Control, goog.ui.Component);
 goog.tagUnsealableClass(goog.ui.Control);
@@ -212,7 +215,7 @@ goog.ui.Control.prototype.keyHandler_;
 
 /**
  * Additional class name(s) to apply to the control's root element, if any.
- * @type {Array.<string>?}
+ * @type {Array<string>?}
  * @private
  */
 goog.ui.Control.prototype.extraClassNames_ = null;
@@ -339,7 +342,7 @@ goog.ui.Control.prototype.setRenderer = function(renderer) {
 /**
  * Returns any additional class name(s) to be applied to the component's
  * root element, or null if no extra class names are needed.
- * @return {Array.<string>?} Additional class names to be applied to
+ * @return {Array<string>?} Additional class names to be applied to
  *     the component's root element (null if none).
  */
 goog.ui.Control.prototype.getExtraClassNames = function() {
@@ -458,6 +461,30 @@ goog.ui.Control.prototype.setPreferredAriaRole = function(role) {
 
 
 /**
+ * Gets the control's aria label.
+ * @return {?string} This control's aria label.
+ */
+goog.ui.Control.prototype.getAriaLabel = function() {
+  return this.ariaLabel_;
+};
+
+
+/**
+ * Sets the control's aria label. This can be used to assign aria label to the
+ * element after it is rendered.
+ * @param {string} label The string to set as the aria label for this control.
+ *     No escaping is done on this value.
+ */
+goog.ui.Control.prototype.setAriaLabel = function(label) {
+  this.ariaLabel_ = label;
+  var element = this.getElement();
+  if (element) {
+    this.renderer_.setAriaLabel(element, label);
+  }
+};
+
+
+/**
  * Returns the DOM element into which child components are to be rendered,
  * or null if the control itself hasn't been rendered yet.  Overrides
  * {@link goog.ui.Component#getContentElement} by delegating to the renderer.
@@ -517,6 +544,9 @@ goog.ui.Control.prototype.decorateInternal = function(element) {
  */
 goog.ui.Control.prototype.enterDocument = function() {
   goog.ui.Control.superClass_.enterDocument.call(this);
+
+  // Call the renderer's setAriaStates method to set element's aria attributes.
+  this.renderer_.setAriaStates(this, this.getElementStrict());
 
   // Call the renderer's initializeDom method to configure properties of the
   // control's DOM that can only be done once it's in the document.
@@ -824,7 +854,7 @@ goog.ui.Control.prototype.setEnabled = function(enable) {
     if (this.isVisible()) {
       this.renderer_.setFocusable(this, enable);
     }
-    this.setState(goog.ui.Component.State.DISABLED, !enable);
+    this.setState(goog.ui.Component.State.DISABLED, !enable, true);
   }
 };
 
@@ -996,8 +1026,13 @@ goog.ui.Control.prototype.hasState = function(state) {
  * transition events; use advisedly.
  * @param {goog.ui.Component.State} state State to set or clear.
  * @param {boolean} enable Whether to set or clear the state (if supported).
+ * @param {boolean=} opt_calledFrom Prevents looping with setEnabled.
  */
-goog.ui.Control.prototype.setState = function(state, enable) {
+goog.ui.Control.prototype.setState = function(state, enable, opt_calledFrom) {
+  if (!opt_calledFrom && state == goog.ui.Component.State.DISABLED) {
+    this.setEnabled(!enable);
+    return;
+  }
   if (this.isSupportedState(state) && enable != this.hasState(state)) {
     // Delegate actual styling to the renderer, since it is DOM-specific.
     this.renderer_.setState(this, state, enable);

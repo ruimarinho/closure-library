@@ -16,6 +16,7 @@
  * @fileoverview A delayed callback that pegs to the next animation frame
  * instead of a user-configurable timeout.
  *
+ * @author nicksantos@google.com (Nick Santos)
  */
 
 goog.provide('goog.async.AnimationDelay');
@@ -262,7 +263,8 @@ goog.async.AnimationDelay.prototype.getRaf_ = function() {
  */
 goog.async.AnimationDelay.prototype.getCancelRaf_ = function() {
   var win = this.win_;
-  return win.cancelRequestAnimationFrame ||
+  return win.cancelAnimationFrame ||
+      win.cancelRequestAnimationFrame ||
       win.webkitCancelRequestAnimationFrame ||
       win.mozCancelRequestAnimationFrame ||
       win.oCancelRequestAnimationFrame ||

@@ -18,7 +18,6 @@
  * the different draw methods of the graphics implementation, and
  * all interfaces that the various element types support.
  * @author arv@google.com (Erik Arvidsson)
- * @author yoah@google.com (Yoah Bar-David)
  */
 
 
@@ -102,7 +101,10 @@ goog.graphics.Element.prototype.getGraphics = function() {
 
 
 /**
- * Set the transformation of the element.
+ * Set the translation and rotation of the element.
+ *
+ * If a more general affine transform is needed than this provides
+ * (e.g. skew and scale) then use setTransform.
  * @param {number} x The x coordinate of the translation transform.
  * @param {number} y The y coordinate of the translation transform.
  * @param {number} rotate The angle of the rotation transform.
@@ -111,8 +113,6 @@ goog.graphics.Element.prototype.getGraphics = function() {
  */
 goog.graphics.Element.prototype.setTransformation = function(x, y, rotate,
     centerX, centerY) {
-  // TODO(robbyw): Add skew and scale.
-
   this.transform_ = goog.graphics.AffineTransform.getRotateInstance(
       goog.math.toRadians(rotate), centerX, centerY).translate(x, y);
   this.getGraphics().setElementTransform(this, x, y, rotate, centerX, centerY);
@@ -126,6 +126,17 @@ goog.graphics.Element.prototype.setTransformation = function(x, y, rotate,
 goog.graphics.Element.prototype.getTransform = function() {
   return this.transform_ ? this.transform_.clone() :
       new goog.graphics.AffineTransform();
+};
+
+
+/**
+ * Set the affine transform of the element.
+ * @param {!goog.graphics.AffineTransform} affineTransform The
+ *     transformation applied to this element.
+ */
+goog.graphics.Element.prototype.setTransform = function(affineTransform) {
+  this.transform_ = affineTransform.clone();
+  this.getGraphics().setElementAffineTransform(this, affineTransform);
 };
 
 

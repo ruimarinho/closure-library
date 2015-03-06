@@ -57,7 +57,7 @@ goog.require('goog.promise.Resolver');
  *
  * @param {function(
  *             this:RESOLVER_CONTEXT,
- *             function((TYPE|IThenable.<TYPE>|Thenable)=),
+ *             function((TYPE|IThenable<TYPE>|Thenable)=),
  *             function(*)): void} resolver
  *     Initialization function that is invoked immediately with {@code resolve}
  *     and {@code reject} functions as arguments. The Promise is resolved or
@@ -68,7 +68,7 @@ goog.require('goog.promise.Resolver');
  * @constructor
  * @struct
  * @final
- * @implements {goog.Thenable.<TYPE>}
+ * @implements {goog.Thenable<TYPE>}
  * @template TYPE,RESOLVER_CONTEXT
  */
 goog.Promise = function(resolver, opt_context) {
@@ -95,7 +95,7 @@ goog.Promise = function(resolver, opt_context) {
   /**
    * The list of {@code onFulfilled} and {@code onRejected} callbacks added to
    * this Promise by calls to {@code then()}.
-   * @private {Array.<goog.Promise.CallbackEntry_>}
+   * @private {Array<goog.Promise.CallbackEntry_>}
    */
   this.callbackEntries_ = null;
 
@@ -134,7 +134,7 @@ goog.Promise = function(resolver, opt_context) {
      * A list of stack trace frames pointing to the locations where this Promise
      * was created or had callbacks added to it. Saved to add additional context
      * to stack traces when an exception is thrown.
-     * @private {!Array.<string>}
+     * @private {!Array<string>}
      */
     this.stack_ = [];
     this.addStackTrace_(new Error('created'));
@@ -146,18 +146,40 @@ goog.Promise = function(resolver, opt_context) {
     this.currentStep_ = 0;
   }
 
-  try {
-    var self = this;
-    resolver.call(
-        opt_context,
-        function(value) {
-          self.resolve_(goog.Promise.State_.FULFILLED, value);
-        },
-        function(reason) {
-          self.resolve_(goog.Promise.State_.REJECTED, reason);
-        });
-  } catch (e) {
-    this.resolve_(goog.Promise.State_.REJECTED, e);
+  if (resolver == goog.Promise.RESOLVE_FAST_PATH_) {
+    // If the special sentinel resolver value is passed (from
+    // goog.Promise.resolve) we short cut to immediately resolve the promise
+    // using the value passed as opt_context. Don't try this at home.
+    this.resolve_(goog.Promise.State_.FULFILLED, opt_context);
+  } else {
+    try {
+      var self = this;
+      resolver.call(
+          opt_context,
+          function(value) {
+            self.resolve_(goog.Promise.State_.FULFILLED, value);
+          },
+          function(reason) {
+            if (goog.DEBUG &&
+                !(reason instanceof goog.Promise.CancellationError)) {
+              try {
+                // Promise was rejected. Step up one call frame to see why.
+                if (reason instanceof Error) {
+                  throw reason;
+                } else {
+                  throw new Error('Promise rejected.');
+                }
+              } catch (e) {
+                // Only thrown so browser dev tools can catch rejections of
+                // promises when the option to break on caught exceptions is
+                // activated.
+              }
+            }
+            self.resolve_(goog.Promise.State_.REJECTED, reason);
+          });
+    } catch (e) {
+      this.resolve_(goog.Promise.State_.REJECTED, e);
+    }
   }
 };
 
@@ -218,15 +240,25 @@ goog.Promise.CallbackEntry_;
 
 
 /**
- * @param {(TYPE|goog.Thenable.<TYPE>|Thenable)=} opt_value
- * @return {!goog.Promise.<TYPE>} A new Promise that is immediately resolved
+ * If this passed as the first argument to the {@link goog.Promise} constructor
+ * the the opt_context is (against its primary use) used to immediately resolve
+ * the promise. This is used from  {@link goog.Promise.resolve} as an
+ * optimization to avoid allocating 3 closures that are never really needed.
+ * @private @const {!Function}
+ */
+goog.Promise.RESOLVE_FAST_PATH_ = function() {};
+
+
+/**
+ * @param {(TYPE|goog.Thenable<TYPE>|Thenable)=} opt_value
+ * @return {!goog.Promise<TYPE>} A new Promise that is immediately resolved
  *     with the given value.
  * @template TYPE
  */
 goog.Promise.resolve = function(opt_value) {
-  return new goog.Promise(function(resolve, reject) {
-    resolve(opt_value);
-  });
+  // Passes the value as the context, which is a special fast pass when
+  // goog.Promise.RESOLVE_FAST_PATH_ is passed as the first argument.
+  return new goog.Promise(goog.Promise.RESOLVE_FAST_PATH_, opt_value);
 };
 
 
@@ -243,8 +275,8 @@ goog.Promise.reject = function(opt_reason) {
 
 
 /**
- * @param {!Array.<!(goog.Thenable.<TYPE>|Thenable)>} promises
- * @return {!goog.Promise.<TYPE>} A Promise that receives the result of the
+ * @param {!Array<!(goog.Thenable<TYPE>|Thenable)>} promises
+ * @return {!goog.Promise<TYPE>} A Promise that receives the result of the
  *     first Promise (or Promise-like) input to complete.
  * @template TYPE
  */
@@ -261,8 +293,8 @@ goog.Promise.race = function(promises) {
 
 
 /**
- * @param {!Array.<!(goog.Thenable.<TYPE>|Thenable)>} promises
- * @return {!goog.Promise.<!Array.<TYPE>>} A Promise that receives a list of
+ * @param {!Array<!(goog.Thenable<TYPE>|Thenable)>} promises
+ * @return {!goog.Promise<!Array<TYPE>>} A Promise that receives a list of
  *     every fulfilled value once every input Promise (or Promise-like) is
  *     successfully fulfilled, or is rejected by the first rejection result.
  * @template TYPE
@@ -297,8 +329,8 @@ goog.Promise.all = function(promises) {
 
 
 /**
- * @param {!Array.<!(goog.Thenable.<TYPE>|Thenable)>} promises
- * @return {!goog.Promise.<TYPE>} A Promise that receives the value of the first
+ * @param {!Array<!(goog.Thenable<TYPE>|Thenable)>} promises
+ * @return {!goog.Promise<TYPE>} A Promise that receives the value of the first
  *     input to be fulfilled, or is rejected with a list of every rejection
  *     reason if all inputs are rejected.
  * @template TYPE
@@ -333,7 +365,7 @@ goog.Promise.firstFulfilled = function(promises) {
 
 
 /**
- * @return {!goog.promise.Resolver.<TYPE>} Resolver wrapping the promise and its
+ * @return {!goog.promise.Resolver<TYPE>} Resolver wrapping the promise and its
  *     resolve / reject functions. Resolving or rejecting the resolver
  *     resolves or rejects the promise.
  * @template TYPE
@@ -400,13 +432,15 @@ goog.Thenable.addImplementation(goog.Promise);
  * not prevented by adding callbacks with {@code thenAlways}. A Promise that has
  * a cleanup handler added with {@code thenAlways} will be canceled if all of
  * its children created by {@code then} (or {@code thenCatch}) are canceled.
+ * Additionally, since any rejections are not passed to the callback, it does
+ * not stop the unhandled rejection handler from running.
  *
  * @param {function(this:THIS): void} onResolved A function that will be invoked
  *     when the Promise is resolved.
  * @param {THIS=} opt_context An optional context object that will be the
  *     execution context for the callbacks. By default, functions are executed
  *     in the global scope.
- * @return {!goog.Promise.<TYPE>} This Promise, for chaining additional calls.
+ * @return {!goog.Promise<TYPE>} This Promise, for chaining additional calls.
  * @template THIS
  */
 goog.Promise.prototype.thenAlways = function(onResolved, opt_context) {
@@ -486,6 +520,7 @@ goog.Promise.prototype.cancelInternal_ = function(err) {
     if (this.parent_) {
       // Cancel the Promise and remove it from the parent's child list.
       this.parent_.cancelChild_(this, err);
+      this.parent_ = null;
     } else {
       this.resolve_(goog.Promise.State_.REJECTED, err);
     }
@@ -570,7 +605,7 @@ goog.Promise.prototype.addCallbackEntry_ = function(callbackEntry) {
  * @see http://promisesaplus.com/#the__method
  *
  * @param {?function(this:THIS, TYPE):
- *          (RESULT|goog.Promise.<RESULT>|Thenable)} onFulfilled A callback that
+ *          (RESULT|goog.Promise<RESULT>|Thenable)} onFulfilled A callback that
  *     will be invoked if the Promise is fullfilled, or null.
  * @param {?function(this:THIS, *): *} onRejected A callback that will be
  *     invoked if the Promise is rejected, or null.
@@ -697,6 +732,9 @@ goog.Promise.prototype.resolve_ = function(state, x) {
 
   this.result_ = x;
   this.state_ = state;
+  // Since we can no longer be cancelled, remove link to parent, so that the
+  // child promise does not keep the parent promise alive.
+  this.parent_ = null;
   this.scheduleCallbacks_();
 
   if (state == goog.Promise.State_.REJECTED &&
@@ -779,7 +817,7 @@ goog.Promise.prototype.scheduleCallbacks_ = function() {
 goog.Promise.prototype.executeCallbacks_ = function() {
   while (this.callbackEntries_ && this.callbackEntries_.length) {
     var entries = this.callbackEntries_;
-    this.callbackEntries_ = [];
+    this.callbackEntries_ = null;
 
     for (var i = 0; i < entries.length; i++) {
       if (goog.Promise.LONG_STACK_TRACES) {
@@ -805,10 +843,17 @@ goog.Promise.prototype.executeCallbacks_ = function() {
  */
 goog.Promise.prototype.executeCallback_ = function(
     callbackEntry, state, result) {
+  // When the parent is resolved/rejected, the child no longer needs to hold
+  // on to it, as the parent can no longer be cancelled.
+  if (callbackEntry.child) {
+    callbackEntry.child.parent_ = null;
+  }
   if (state == goog.Promise.State_.FULFILLED) {
     callbackEntry.onFulfilled(result);
   } else {
-    this.removeUnhandledRejection_();
+    if (callbackEntry.child) {
+      this.removeUnhandledRejection_();
+    }
     callbackEntry.onRejected(result);
   }
 };
@@ -964,10 +1009,10 @@ goog.Promise.CancellationError.prototype.name = 'cancel';
 /**
  * Internal implementation of the resolver interface.
  *
- * @param {!goog.Promise.<TYPE>} promise
- * @param {function((TYPE|goog.Promise.<TYPE>|Thenable)=)} resolve
+ * @param {!goog.Promise<TYPE>} promise
+ * @param {function((TYPE|goog.Promise<TYPE>|Thenable)=)} resolve
  * @param {function(*): void} reject
- * @implements {goog.promise.Resolver.<TYPE>}
+ * @implements {goog.promise.Resolver<TYPE>}
  * @final @struct
  * @constructor
  * @private
