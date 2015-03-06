@@ -6,4 +6,5 @@
 *.png
 *_test.js
 alltests.js
-known_issues
+AUTHORS
+CONTRIBUTING
