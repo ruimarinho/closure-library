@@ -1,6 +1,6 @@
 {
   "name": "seegno-closure-library",
-  "version": "20150306.0.0",
+  "version": "20150306.0.1",
   "description": "A mirror of the upstream Google Closure Library but repackaged for npm and without global namespace pollution.",
   "keywords": [
     "javascript",
