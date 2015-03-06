@@ -1,19 +1,45 @@
 # Closure Library
 
-A very close fork to the upstream [Google Closure Library](https://github.com/google/closure-library) but tested with our own modules and repackaged for npm.
+A mirror of the upstream [Google Closure Library](https://github.com/google/closure-library) but repackaged for npm and without global namespace pollution.
 
-Originally based on Medium's [fork](https://github.com/Medium/closure-library).
+## Usage
 
-## Updating dependencies
+```js
+var goog = require('seegno-closure-library')
 
-The `master` branch if currently being rebased with the upstream.
+global.goog === undefined;
+// => true
+
+goog.require;
+// => [Function]
+
+goog.require('goog.string.linkify');
+// => undefined
+
+goog.string.linkify.linkifyPlainText('Foo https://www.bar.com');
+// => 'Foo <a rel="nofollow" target="_blank" href="https://www.bar.com">https://www.bar.com</a>'
+```
+
+## Loading a dependency file
+
+Generate a dependency file by using `closure/bin/build/depswriter.py` and load it using the special `loadScript` function from `goog`:
+
+```js
+var goog = require('seegno-closure-library');
+
+goog.loadScript(__dirname + 'lib/closure/goog/deps.js');
+```
+
+## Updating from upstream
+
+The `master` branch is always merged with `upstream/master` without fast forwarding commits:
 
 ```bash
 git remote add upstream git@github.com:google/closure-library
 git fetch upstream
-git rebase upstream/master
+git merge --no-ff upstream/master
 ```
 
-# Credits
+# License
 
-The updating instructions contained in this README and the `postinstall` script to remove test and demo files were originally created by Medium.
+This package is licensed under MIT. The bundled Google Closure Library is licensed under Apache 2.0.
