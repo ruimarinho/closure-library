@@ -37,7 +37,9 @@ module.exports.load = function(context) {
 
   var sandbox = vm.createContext(context)
 
-  function loadScript(file) {
+  function loadScript(file, basePath) {
+    sandbox.basePath = basePath;
+
     vm.runInContext(fs.readFileSync(file), sandbox);
 
     return true;
